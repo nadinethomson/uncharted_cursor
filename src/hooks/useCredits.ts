@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateCredits, updateReputation } from '../store/userSlice';
-import { executeCreditTransaction, checkSufficientCredits } from '../services/creditService';
+import { executePostCreditTransaction, checkSufficientCredits } from '../services/creditService';
 import { calculateReputationTier } from '../utils/reputationTier';
 
 /**
@@ -25,7 +25,7 @@ export function useCredits() {
       return { success: false, error: 'User not logged in', data: null };
     }
 
-    const result = await executeCreditTransaction(userState.profile.id, {
+    const result = await executePostCreditTransaction(userState.profile.id, {
       destinationId: relatedId || '',
       type: actionType as 'tip' | 'review' | 'experience',
       content: 'Ask a local question',
@@ -53,7 +53,7 @@ export function useCredits() {
       return { success: false, error: 'User not logged in', data: null };
     }
 
-    const result = await executeCreditTransaction(userState.profile.id, {
+    const result = await executePostCreditTransaction(userState.profile.id, {
       destinationId: relatedId || '',
       type: actionType as 'tip' | 'review' | 'experience',
       content: 'Post creation',

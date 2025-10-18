@@ -2,7 +2,7 @@ import React from 'react';
 import { BUDGET_OPTIONS } from '../../utils/constants';
 
 interface QuizStep3Props {
-  selectedBudget: string | null;
+  selectedBudget: string | undefined;
   onBudgetChange: (budget: string) => void;
   onNext: () => void;
   onPrevious: () => void;

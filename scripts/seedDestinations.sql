@@ -34,3 +34,8 @@ $$ LANGUAGE plpgsql;
 GRANT EXECUTE ON FUNCTION seed_destinations() TO anon, authenticated;
 
 
+
+
+
+
+

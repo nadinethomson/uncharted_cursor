@@ -172,6 +172,114 @@ export async function runQuizMatching(quizAnswers: QuizAnswers): Promise<QuizRes
   }
 }
 
+/**
+ * Adds a new experience/attraction to a destination
+ * 
+ * @param experienceData - Experience creation data
+ * @returns Promise<boolean> - Success status
+ * 
+ * @throws {Error} If operation fails
+ */
+export async function addExperienceToDestination(experienceData: {
+  destinationId: string;
+  name: string;
+  description: string;
+  image?: File;
+}): Promise<boolean> {
+  try {
+    // First, get the current destination
+    const { data: destination, error: fetchError } = await supabase
+      .from('destinations')
+      .select('key_attractions')
+      .eq('id', experienceData.destinationId)
+      .single();
+
+    if (fetchError || !destination) {
+      throw new Error('Destination not found');
+    }
+
+    // Check if attraction already exists
+    const existingAttractions = destination.key_attractions || [];
+    const attractionExists = existingAttractions.some(
+      (attraction: any) => attraction.name.toLowerCase() === experienceData.name.toLowerCase()
+    );
+
+    if (attractionExists) {
+      throw new Error('This attraction already exists here');
+    }
+
+    // Check if we've reached the limit of 5 attractions
+    if (existingAttractions.length >= 5) {
+      throw new Error('Maximum of 5 attractions allowed per destination');
+    }
+
+    // Upload image if provided
+    let imageUrl: string | null = null;
+    if (experienceData.image) {
+      imageUrl = await uploadAttractionImage(experienceData.destinationId, experienceData.image);
+    }
+
+    // Create new attraction object
+    const newAttraction = {
+      name: experienceData.name,
+      description: experienceData.description,
+      image_url: imageUrl
+    };
+
+    // Update destination with new attraction
+    const updatedAttractions = [...existingAttractions, newAttraction];
+    
+    const { error: updateError } = await supabase
+      .from('destinations')
+      .update({ key_attractions: updatedAttractions })
+      .eq('id', experienceData.destinationId);
+
+    if (updateError) {
+      throw new Error(`Failed to add attraction: ${updateError.message}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Add experience to destination error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Uploads an image for an attraction
+ * 
+ * @param destinationId - Destination ID
+ * @param imageFile - Image file to upload
+ * @returns Promise<string> - Public URL of uploaded image
+ * 
+ * @throws {Error} If upload fails
+ */
+async function uploadAttractionImage(destinationId: string, imageFile: File): Promise<string> {
+  try {
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${destinationId}_${Date.now()}.${fileExt}`;
+    const filePath = `attractions/${destinationId}/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from('travel-images')
+      .upload(filePath, imageFile);
+
+    if (error) {
+      throw new Error(`Failed to upload image: ${error.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('travel-images')
+      .getPublicUrl(filePath);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error('Upload attraction image error:', error);
+    throw error;
+  }
+}
+
 // Export aliases for backward compatibility
 export const getAllDestinations = fetchAll;
 export const getDestinationById = fetchDestinationById;

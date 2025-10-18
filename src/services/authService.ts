@@ -89,18 +89,40 @@ export async function signinUser(loginData: LoginForm): Promise<ApiResponse<{ us
     }
 
     // Get user profile
-    const { data: user, error: profileError } = await supabase
+    let { data: user, error: profileError } = await supabase
       .from('users')
       .select('*')
       .eq('id', authData.user.id)
       .single();
 
+    // If profile doesn't exist, create a basic one
     if (profileError || !user) {
-      return {
-        success: false,
-        error: 'User profile not found',
-        data: null
-      };
+      console.log('User profile not found, creating basic profile...');
+      
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          username: authData.user.email?.split('@')[0] || 'user',
+          email: authData.user.email || '',
+          country: 'Unknown',
+          interests: [],
+          credits: 10,
+          reputation: 0
+        })
+        .select()
+        .single();
+
+      if (createError || !newUser) {
+        console.error('Failed to create user profile:', createError);
+        return {
+          success: false,
+          error: 'Failed to create user profile. Please contact support.',
+          data: null
+        };
+      }
+      
+      user = newUser;
     }
 
     return {
@@ -169,18 +191,40 @@ export async function getCurrentUser(): Promise<ApiResponse<{ user: User; token:
     }
 
     // Get user profile
-    const { data: user, error: profileError } = await supabase
+    let { data: user, error: profileError } = await supabase
       .from('users')
       .select('*')
       .eq('id', session.user.id)
       .single();
 
+    // If profile doesn't exist, create a basic one
     if (profileError || !user) {
-      return {
-        success: false,
-        error: 'User profile not found',
-        data: null
-      };
+      console.log('User profile not found during session restore, creating basic profile...');
+      
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({
+          id: session.user.id,
+          username: session.user.email?.split('@')[0] || 'user',
+          email: session.user.email || '',
+          country: 'Unknown',
+          interests: [],
+          credits: 10,
+          reputation: 0
+        })
+        .select()
+        .single();
+
+      if (createError || !newUser) {
+        console.error('Failed to create user profile during session restore:', createError);
+        return {
+          success: false,
+          error: 'Failed to create user profile. Please contact support.',
+          data: null
+        };
+      }
+      
+      user = newUser;
     }
 
     return {

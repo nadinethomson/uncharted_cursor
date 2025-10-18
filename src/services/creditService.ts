@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { calculateCreditsEarned, calculateCreditsSpent, calculateNewCreditTotal } from '../utils/creditCalculator';
+import { calculateCreditsEarned, calculateCreditsSpent, calculateNewCreditTotal, hasSufficientCredits } from '../utils/creditCalculator';
 import { calculateReputationTier } from '../utils/reputationTier';
 import { ApiResponse, Post, CreatePostData } from '../types';
 
@@ -331,9 +331,102 @@ export async function rollbackCreditTransaction(
 }
 
 /**
- * Execute a credit transaction (alias for createPostWithCredits for backward compatibility)
+ * Execute a generic credit transaction (for non-post actions)
+ * 
+ * @param userId - User ID
+ * @param transactionData - Transaction data including type and amount
+ * @returns Promise with transaction result
  */
 export async function executeCreditTransaction(
+  userId: string,
+  transactionData: {
+    destinationId: string;
+    type: string;
+    content: string;
+    imageUrl?: string;
+  }
+): Promise<{ success: boolean; error?: string; creditResult?: any }> {
+  try {
+    // Get current user
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // Calculate credit change
+    const creditChange = calculateCreditsSpent(transactionData.type);
+    
+    // Check if user has sufficient credits (for spending actions)
+    if (creditChange < 0 && !hasSufficientCredits(user.credits, transactionData.type)) {
+      return { 
+        success: false, 
+        error: 'Insufficient credits for this action' 
+      };
+    }
+
+    // Calculate new totals
+    const newCredits = calculateNewCreditTotal(user.credits, creditChange);
+    const newReputation = user.reputation + Math.abs(creditChange);
+    const newTier = calculateReputationTier(newReputation);
+
+    // Update user credits and reputation
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        credits: newCredits,
+        reputation: newReputation,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+
+    if (updateError) {
+      return { success: false, error: 'Failed to update user credits' };
+    }
+
+    // Log credit transaction
+    const { error: logError } = await supabase
+      .from('credit_transactions')
+      .insert({
+        user_id: userId,
+        amount: creditChange,
+        type: transactionData.type,
+        related_id: transactionData.destinationId,
+        status: 'completed'
+      });
+
+    if (logError) {
+      console.error('Failed to log credit transaction:', logError);
+      // Don't fail the transaction for logging errors
+    }
+
+    return {
+      success: true,
+      creditResult: {
+        newCredits,
+        newReputation,
+        newTier,
+        creditChange
+      }
+    };
+
+  } catch (error) {
+    console.error('Credit transaction error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Transaction failed' 
+    };
+  }
+}
+
+/**
+ * Execute a credit transaction for post creation (alias for createPostWithCredits for backward compatibility)
+ */
+export async function executePostCreditTransaction(
   userId: string,
   postData: CreatePostWithCreditsData
 ): Promise<{ post: Post; creditResult: any }> {

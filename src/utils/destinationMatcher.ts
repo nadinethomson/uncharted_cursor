@@ -15,7 +15,7 @@ export function matchDestinations(
     // Trip style match: 1 point if ANY destination trip style matches
     if (destination.trip_style_tags.includes(quizAnswers.tripStyle)) {
       score += 1;
-      matchReasons.push(`Perfect for ${quizAnswers.tripStyle.toLowerCase()} travelers`);
+      matchReasons.push(`Perfect for ${quizAnswers.tripStyle} travelers`);
     }
 
     // Interest matches: 1 point per matching interest
@@ -28,11 +28,12 @@ export function matchDestinations(
       matchReasons.push(`Matches your interests: ${matchingInterests.join(', ')}`);
     }
 
-    // Apply filters (eliminate if doesn't match)
+    // Apply filters (reduce score if doesn't match, but don't eliminate)
     const passesDistance = filterByDistance(destination, quizAnswers.distance);
     const passesBudget = filterByBudget(destination, quizAnswers.budget);
 
-    if (!passesDistance || !passesBudget) {
+    // Only eliminate if both distance and budget don't match AND destination has both values
+    if (!passesDistance && !passesBudget && destination.distance_km && destination.budget_category) {
       return { ...destination, score: -1, matchReason: '' };
     }
 

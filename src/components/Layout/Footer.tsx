@@ -70,7 +70,7 @@ const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sandstone-light hover:text-white transition-colors duration-200">
+                <a href="/destinations" className="text-sandstone-light hover:text-white transition-colors duration-200">
                   Destinations
                 </a>
               </li>

@@ -1,14 +1,54 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import heroImage from "../../assets/hero-adventure.png";
+
 
 const HeroSection: React.FC = () => {
   const { isLoggedIn } = useAuth();
+  const [unsplashImage, setUnsplashImage] = useState("");
+const [imageLoading, setImageLoading] = useState(true);
+
+
+React.useEffect(() => {
+  // ✓ Wrapped the entire fetch logic inside useEffect
+  const fetchHeroImage = async () => {
+    try {
+      const UNSPLASH_ACCESS_KEY = "UbfZLv6s9r09ktv6YjtV2k7LG8Q3Of_gTFMCLiAh_u0";
+      const response = await fetch(
+        `https://api.unsplash.com/photos/random?query=travel&orientation=landscape&client_id=${UNSPLASH_ACCESS_KEY}`,
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setUnsplashImage(data.urls.regular);
+      }
+    } catch (error) {
+      console.error("Error fetching hero image:", error);
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  fetchHeroImage();
+}, []); // ✓ ADDED: Empty dependency array - runs once on component mount
+
 
   return (
     <section className="hero-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
+           {/* Background Image with Overlay */}
+      <div className="absolute inset-0 h-[600px] sm:h-[700px]">
+        {imageLoading ? (
+          <div className="w-full h-full bg-gradient-forest animate-pulse" />
+        ) : (
+          <>
+            <img src={unsplashImage || heroImage} alt="Adventure travel" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-forest opacity-40" />
+          </>
+        )}
+      </div>
           {/* Hero Content */}
           <div className="max-w-4xl mx-auto">
             <h1 className="heading-hero mb-6">
