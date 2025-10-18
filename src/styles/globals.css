@@ -191,6 +191,38 @@
   .mobile-center {
     @apply text-center sm:text-left;
   }
+  
+  /* Touch-friendly improvements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  .touch-button {
+    @apply touch-target flex items-center justify-center;
+  }
+  
+  /* Mobile-specific spacing */
+  .mobile-padding {
+    @apply p-4 sm:p-6;
+  }
+  
+  .mobile-margin {
+    @apply m-4 sm:m-6;
+  }
+  
+  /* Mobile navigation improvements */
+  .mobile-nav-item {
+    @apply touch-target flex items-center px-4 py-3 text-base font-medium;
+  }
+  
+  /* Mobile form improvements */
+  .mobile-form-input {
+    @apply touch-target px-4 py-3 text-base;
+  }
+  
+  .mobile-form-button {
+    @apply touch-target w-full sm:w-auto;
+  }
 }
 
 /* Utility classes */
@@ -272,6 +304,52 @@
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  /* Improve touch targets on mobile */
+  button, a, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Better spacing for mobile */
+  .card {
+    @apply p-4;
+  }
+  
+  /* Mobile-friendly modals */
+  .modal-panel {
+    @apply max-h-[95vh] m-2;
+  }
+  
+  /* Mobile navigation improvements */
+  .nav-link {
+    @apply py-3 px-4 text-base;
+  }
+  
+  /* Mobile form improvements */
+  .form-input, .form-textarea {
+    @apply text-base py-3 px-4;
+  }
+  
+  /* Mobile button improvements */
+  .btn-primary, .btn-secondary, .btn-outline {
+    @apply py-3 px-6 text-base w-full sm:w-auto;
+  }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .card-hover:hover {
+    @apply transform-none shadow-card;
+  }
+  
+  /* Improve touch feedback */
+  button:active, a:active {
+    @apply transform scale-95;
   }
 }
 

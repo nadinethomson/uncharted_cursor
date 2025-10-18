@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { createPostWithCredits as createPostWithCreditsService } from './creditService';
 import { Post, CreatePostData, User, Destination } from '../types';
+import { createNewPostNotification } from './notificationService';
 
 /**
  * Service for handling post CRUD operations
@@ -70,6 +71,35 @@ export async function createPost(postData: CreatePostData): Promise<PostWithUser
       throw new Error(`Failed to fetch complete post data: ${fetchError?.message}`);
     }
 
+    // Create notifications for users who have saved this destination
+    try {
+      // Get users who have saved this destination
+      const { data: savedUsers, error: savedUsersError } = await supabase
+        .from('saved_visited')
+        .select('user_id')
+        .eq('destination_id', postData.destinationId)
+        .eq('type', 'saved');
+
+      if (!savedUsersError && savedUsers && savedUsers.length > 0) {
+        // Create notifications for each user who saved this destination
+        const notificationPromises = savedUsers
+          .filter(savedUser => savedUser.user_id !== postData.userId) // Don't notify the post author
+          .map(savedUser => 
+            createNewPostNotification(
+              savedUser.user_id,
+              postData.destinationId,
+              completePost.destination.name,
+              postData.type
+            )
+          );
+
+        await Promise.all(notificationPromises);
+      }
+    } catch (notificationError) {
+      console.error('Failed to create post notifications:', notificationError);
+      // Don't fail the main operation if notification creation fails
+    }
+
     return completePost;
 
   } catch (error) {
@@ -129,13 +159,15 @@ export async function fetchPostsByDestination(
  * 
  * @param userId - User ID
  * @param limit - Maximum number of posts to return
+ * @param offset - Number of posts to skip
  * @returns Promise<PostWithUser[]> - Array of posts with user and destination data
  * 
  * @throws {Error} If query fails
  */
 export async function fetchPostsByUser(
   userId: string,
-  limit: number = 20
+  limit: number = 20,
+  offset: number = 0
 ): Promise<PostWithUser[]> {
   try {
     const { data: posts, error } = await supabase
@@ -156,7 +188,7 @@ export async function fetchPostsByUser(
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit - 1);
 
     if (error) {
       throw new Error(`Failed to fetch user posts: ${error.message}`);
@@ -212,11 +244,11 @@ export async function fetchPostById(postId: string): Promise<PostWithUser> {
 }
 
 /**
- * Updates a post (content only)
+ * Updates a post
  * 
  * @param postId - Post ID
  * @param userId - User ID (for authorization)
- * @param content - New post content
+ * @param updateData - Post update data
  * @returns Promise<PostWithUser> - Updated post
  * 
  * @throws {Error} If post not found, unauthorized, or update fails
@@ -224,13 +256,17 @@ export async function fetchPostById(postId: string): Promise<PostWithUser> {
 export async function updatePost(
   postId: string,
   userId: string,
-  content: string
+  updateData: {
+    content: string;
+    type?: 'tip' | 'review' | 'experience';
+    imageFile?: File;
+  }
 ): Promise<PostWithUser> {
   try {
     // Verify post exists and belongs to user
     const { data: existingPost, error: getError } = await supabase
       .from('posts')
-      .select('id, user_id')
+      .select('id, user_id, image_url')
       .eq('id', postId)
       .eq('user_id', userId)
       .single();
@@ -239,13 +275,35 @@ export async function updatePost(
       throw new Error('Post not found or unauthorized');
     }
 
-    // Update post content
+    // Handle image upload if provided
+    let imageUrl = existingPost.image_url;
+    if (updateData.imageFile) {
+      // Delete old image if it exists
+      if (imageUrl) {
+        await deletePostImage(imageUrl);
+      }
+      // Upload new image
+      imageUrl = await uploadPostImage(userId, updateData.imageFile);
+    }
+
+    // Prepare update data
+    const updateFields: any = {
+      content: updateData.content,
+      updated_at: new Date().toISOString()
+    };
+
+    if (updateData.type) {
+      updateFields.type = updateData.type;
+    }
+
+    if (imageUrl !== existingPost.image_url) {
+      updateFields.image_url = imageUrl;
+    }
+
+    // Update post
     const { data: updatedPost, error: updateError } = await supabase
       .from('posts')
-      .update({ 
-        content,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateFields)
       .eq('id', postId)
       .select(`
         *,

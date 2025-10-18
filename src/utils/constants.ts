@@ -82,7 +82,20 @@ export const ERROR_MESSAGES = {
   INVALID_FILE_TYPE: 'We only accept JPG and PNG images. Please choose a different file.',
   PROFANITY_DETECTED: 'Your tip contains inappropriate language. Please revise and try again.',
   QUESTION_TOO_LONG: 'Your question is too long for our travel guide. Please keep it under 300 characters.',
-  CONTENT_TOO_LONG: 'Your message is too long for our postcard. Please keep it under 500 characters.'
+  CONTENT_TOO_LONG: 'Your message is too long for our postcard. Please keep it under 500 characters.',
+  // Additional error messages for common scenarios
+  LOADING_FAILED: 'Our travel guide got lost! Please refresh and try again.',
+  SAVE_FAILED: 'Couldn\'t save that to your travel journal. Please try again.',
+  DELETE_FAILED: 'Couldn\'t remove that from your travel log. Please try again.',
+  UPDATE_FAILED: 'Couldn\'t update your travel notes. Please try again.',
+  AUTH_FAILED: 'Your travel credentials didn\'t check out. Please try again.',
+  SESSION_EXPIRED: 'Your travel pass has expired. Please sign in again.',
+  PERMISSION_DENIED: 'You don\'t have permission for this travel action.',
+  RATE_LIMITED: 'You\'re moving too fast! Please slow down and try again in a moment.',
+  SERVER_ERROR: 'Our travel servers are having a rest day. Please try again later.',
+  VALIDATION_ERROR: 'Please check your travel details and try again.',
+  DUPLICATE_ENTRY: 'This entry already exists in your travel log.',
+  INVALID_INPUT: 'That doesn\'t look like valid travel information. Please check and try again.'
 } as const;
 
 // Success messages
@@ -97,4 +110,93 @@ export const SUCCESS_MESSAGES = {
   SIGNUP_SUCCESS: 'Welcome to the Uncharted community!',
   LOGOUT_SUCCESS: 'Safe travels! See you on your next adventure.'
 } as const;
+
+/**
+ * Maps error types to travel-themed error messages
+ * @param errorType - The type of error
+ * @param fallbackMessage - Fallback message if no specific mapping exists
+ * @returns Travel-themed error message
+ */
+export function getTravelErrorMessage(errorType: string, fallbackMessage?: string): string {
+  const errorMappings: Record<string, string> = {
+    // Network and loading errors
+    'network': ERROR_MESSAGES.NETWORK_ERROR,
+    'loading': ERROR_MESSAGES.LOADING_FAILED,
+    'fetch': ERROR_MESSAGES.LOADING_FAILED,
+    'timeout': ERROR_MESSAGES.NETWORK_ERROR,
+    
+    // Authentication errors
+    'auth': ERROR_MESSAGES.AUTH_FAILED,
+    'login': ERROR_MESSAGES.INVALID_CREDENTIALS,
+    'signup': ERROR_MESSAGES.AUTH_FAILED,
+    'session': ERROR_MESSAGES.SESSION_EXPIRED,
+    'permission': ERROR_MESSAGES.PERMISSION_DENIED,
+    'unauthorized': ERROR_MESSAGES.NOT_LOGGED_IN,
+    
+    // Content errors
+    'post': ERROR_MESSAGES.POST_CREATION_FAILED,
+    'create': ERROR_MESSAGES.POST_CREATION_FAILED,
+    'save': ERROR_MESSAGES.SAVE_FAILED,
+    'update': ERROR_MESSAGES.UPDATE_FAILED,
+    'delete': ERROR_MESSAGES.DELETE_FAILED,
+    'upload': ERROR_MESSAGES.IMAGE_UPLOAD_FAILED,
+    
+    // Validation errors
+    'validation': ERROR_MESSAGES.VALIDATION_ERROR,
+    'invalid': ERROR_MESSAGES.INVALID_INPUT,
+    'required': ERROR_MESSAGES.VALIDATION_ERROR,
+    'format': ERROR_MESSAGES.VALIDATION_ERROR,
+    
+    // Server errors
+    'server': ERROR_MESSAGES.SERVER_ERROR,
+    'internal': ERROR_MESSAGES.SERVER_ERROR,
+    'database': ERROR_MESSAGES.SERVER_ERROR,
+    'rate-limit': ERROR_MESSAGES.RATE_LIMITED,
+    
+    // Not found errors
+    'not-found': ERROR_MESSAGES.DESTINATION_NOT_FOUND,
+    'missing': ERROR_MESSAGES.DESTINATION_NOT_FOUND,
+    
+    // Duplicate errors
+    'duplicate': ERROR_MESSAGES.DUPLICATE_ENTRY,
+    'exists': ERROR_MESSAGES.DUPLICATE_ENTRY,
+    'taken': ERROR_MESSAGES.USERNAME_TAKEN,
+    
+    // Generic fallback
+    'generic': ERROR_MESSAGES.GENERIC_ERROR,
+    'unknown': ERROR_MESSAGES.GENERIC_ERROR
+  };
+
+  // Try to find a specific mapping
+  const lowerErrorType = errorType.toLowerCase();
+  for (const [key, message] of Object.entries(errorMappings)) {
+    if (lowerErrorType.includes(key)) {
+      return message;
+    }
+  }
+
+  // Return fallback or generic message
+  return fallbackMessage || ERROR_MESSAGES.GENERIC_ERROR;
+}
+
+/**
+ * Gets a travel-themed error message based on error content
+ * @param error - Error object or string
+ * @returns Travel-themed error message
+ */
+export function getErrorMessage(error: any): string {
+  if (typeof error === 'string') {
+    return getTravelErrorMessage(error);
+  }
+  
+  if (error?.message) {
+    return getTravelErrorMessage(error.message);
+  }
+  
+  if (error?.code) {
+    return getTravelErrorMessage(error.code);
+  }
+  
+  return ERROR_MESSAGES.GENERIC_ERROR;
+}
 

@@ -20,10 +20,10 @@ const QuizFlow: React.FC = () => {
   
   // Quiz answers state
   const [quizAnswers, setQuizAnswersState] = useState<Partial<QuizAnswers>>({
-    tripStyle: null,
+    tripStyle: undefined,
     interests: [],
-    budget: null,
-    distance: null
+    budget: undefined,
+    distance: undefined
   });
 
   const handleTripStyleChange = (tripStyle: string) => {
@@ -63,11 +63,11 @@ const QuizFlow: React.FC = () => {
 
   const handleQuizSubmit = async () => {
     // Validate all answers are complete
-    if (!quizAnswers.tripStyle || 
+    if (quizAnswers.tripStyle === undefined || 
         !quizAnswers.interests || 
         quizAnswers.interests.length === 0 || 
-        !quizAnswers.budget || 
-        !quizAnswers.distance) {
+        quizAnswers.budget === undefined || 
+        quizAnswers.distance === undefined) {
       setError(ERROR_MESSAGES.QUIZ_INCOMPLETE);
       return;
     }
@@ -106,7 +106,7 @@ const QuizFlow: React.FC = () => {
       case 1:
         return (
           <QuizStep1
-            selectedTripStyle={quizAnswers.tripStyle || null}
+            selectedTripStyle={quizAnswers.tripStyle}
             onTripStyleChange={handleTripStyleChange}
             onNext={handleNext}
           />
@@ -123,7 +123,7 @@ const QuizFlow: React.FC = () => {
       case 3:
         return (
           <QuizStep3
-            selectedBudget={quizAnswers.budget || null}
+            selectedBudget={quizAnswers.budget}
             onBudgetChange={handleBudgetChange}
             onNext={handleNext}
             onPrevious={handlePrevious}
@@ -132,7 +132,7 @@ const QuizFlow: React.FC = () => {
       case 4:
         return (
           <QuizStep4
-            selectedDistance={quizAnswers.distance || null}
+            selectedDistance={quizAnswers.distance}
             onDistanceChange={handleDistanceChange}
             onNext={handleNext}
             onPrevious={handlePrevious}

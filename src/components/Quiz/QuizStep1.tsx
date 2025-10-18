@@ -2,7 +2,7 @@ import React from 'react';
 import { TRIP_STYLES } from '../../utils/constants';
 
 interface QuizStep1Props {
-  selectedTripStyle: string | null;
+  selectedTripStyle: string | undefined;
   onTripStyleChange: (tripStyle: string) => void;
   onNext: () => void;
 }

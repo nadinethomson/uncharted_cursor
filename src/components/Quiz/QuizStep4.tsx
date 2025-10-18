@@ -2,7 +2,7 @@ import React from 'react';
 import { DISTANCE_OPTIONS } from '../../utils/constants';
 
 interface QuizStep4Props {
-  selectedDistance: string | null;
+  selectedDistance: string | undefined;
   onDistanceChange: (distance: string) => void;
   onNext: () => void;
   onPrevious: () => void;

@@ -1,88 +1,112 @@
-import { useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import {
-  loadDestinationPostsStart,
-  loadDestinationPostsSuccess,
-  loadDestinationPostsFailure,
-  addPost,
-  updatePost,
-  removePost,
-  clearPosts,
-} from '../store/postsSlice';
-import { createPostWithCredits, getDestinationPosts, getUserPosts, deletePost } from '../services/postService';
-import { CreatePostData } from '../types';
-import { useCredits } from './useCredits';
+import { useCallback, useState } from 'react';
+import { useAuth } from './useAuth';
+import { createPost, updatePost, deletePost, fetchPostsByDestination } from '../services/postService';
+import { Post, CreatePostData } from '../types';
+import { getErrorMessage, ERROR_MESSAGES } from '../utils/constants';
 
 /**
  * Custom hook for post management
- * Provides clean interface for post operations with credit handling
+ * Handles post creation, editing, deletion, and fetching
  */
 export function usePosts() {
-  const dispatch = useAppDispatch();
-  const postsState = useAppSelector(state => state.posts);
-  const { earnCredits } = useCredits();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadDestinationPosts = useCallback(async (destinationId: string) => {
-    dispatch(loadDestinationPostsStart());
-    
+  const createNewPost = useCallback(async (postData: CreatePostData): Promise<Post | null> => {
+    if (!user) {
+      setError(ERROR_MESSAGES.NOT_LOGGED_IN);
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      const result = await getDestinationPosts(destinationId);
-      dispatch(loadDestinationPostsSuccess(result));
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load posts';
-      dispatch(loadDestinationPostsFailure(errorMessage));
-      throw error;
+      const post = await createPost(postData);
+      return post;
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+      return null;
+    } finally {
+      setLoading(false);
     }
-  }, [dispatch]);
+  }, [user]);
 
-  const loadUserPosts = useCallback(async (userId: string) => {
-    return await getUserPosts(userId);
+  const editPost = useCallback(async (
+    postId: string, 
+    updateData: {
+      content: string;
+      type?: 'tip' | 'review' | 'experience';
+      imageFile?: File;
+    }
+  ): Promise<Post | null> => {
+    if (!user) {
+      setError(ERROR_MESSAGES.NOT_LOGGED_IN);
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const updatedPost = await updatePost(postId, user.id, updateData);
+      return updatedPost;
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const removePost = useCallback(async (postId: string): Promise<boolean> => {
+    if (!user) {
+      setError(ERROR_MESSAGES.NOT_LOGGED_IN);
+      return false;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const success = await deletePost(postId, user.id);
+      return success;
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const fetchPosts = useCallback(async (destinationId: string): Promise<Post[]> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const posts = await fetchPostsByDestination(destinationId);
+      return posts;
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+      return [];
+    } finally {
+      setLoading(false);
+    }
   }, []);
-
-  const createPost = useCallback(async (postData: CreatePostData) => {
-    const result = await createPostWithCredits(postData);
-    
-    if (result) {
-      // Add to Redux state
-      dispatch(addPost(result));
-      
-      // Earn credits (this is handled atomically in the service)
-      // But we can also update the UI optimistically
-      await earnCredits(postData.type, 5, result.id);
-    }
-    
-    return result;
-  }, [dispatch, earnCredits]);
-
-  const removePostById = useCallback(async (postId: string, userId: string) => {
-    const result = await deletePost(postId, userId);
-    
-    if (result) {
-      dispatch(removePost(postId));
-    }
-    
-    return result;
-  }, [dispatch]);
-
-  const clearAllPosts = useCallback(() => {
-    dispatch(clearPosts());
-  }, [dispatch]);
 
   return {
     // State
-    posts: postsState.items,
-    loading: postsState.loading,
-    error: postsState.error,
+    loading,
+    error,
     
     // Actions
-    loadDestinationPosts,
-    loadUserPosts,
-    createPost,
-    removePostById,
-    clearAllPosts,
+    createNewPost,
+    editPost,
+    removePost,
+    fetchPosts,
+    
+    // Utilities
+    clearError: () => setError(null)
   };
 }
-
-
-

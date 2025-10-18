@@ -192,7 +192,7 @@ const LoginPage: React.FC = () => {
           {/* Links */}
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <Link to="/forgot-password" className="font-medium text-sandstone hover:text-sandstone-dark">
                 Forgot your password?
               </Link>
             </div>
@@ -202,7 +202,7 @@ const LoginPage: React.FC = () => {
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <Link to="/signup" className="font-medium text-sandstone hover:text-sandstone-dark">
                 Sign up
               </Link>
             </p>
@@ -214,6 +214,7 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
+
 
 
 
