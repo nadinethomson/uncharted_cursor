@@ -136,7 +136,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6" role="form" aria-labelledby="post-modal-title">
+          <form onSubmit={handleSubmit} className="space-y-6" aria-labelledby="post-modal-title">
             {/* Post Type Selection */}
             <fieldset>
               <legend className="block text-sm font-medium text-gray-700 mb-3">
@@ -222,7 +222,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
                 <div className="mt-2">
                   <img
                     src={URL.createObjectURL(formData.image)}
-                    alt="Preview of selected image"
+                    alt="no image to see here"
                     className="max-w-full h-32 object-cover rounded-lg"
                   />
                 </div>

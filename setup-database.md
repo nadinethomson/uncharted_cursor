@@ -12,7 +12,15 @@
 2. Paste it into the SQL Editor
 3. Click **Run** to execute
 
-### 3. Verify Tables Created
+### 3. Configure Storage for Images
+1. Go to **Storage** in your Supabase dashboard
+2. Create the `travel-images` bucket if it doesn't exist
+3. Click on the bucket → **Policies** tab
+4. Create the 6 policies listed in `database/setup-storage-policies.sql`
+
+This enables image uploads for posts and experiences.
+
+### 4. Verify Tables Created
 After running the schema, you should see these tables in your **Table Editor**:
 - ✅ `users`
 - ✅ `destinations` 
@@ -22,7 +30,7 @@ After running the schema, you should see these tables in your **Table Editor**:
 - ✅ `notifications`
 - ✅ `credit_transactions`
 
-### 4. Test Authentication
+### 5. Test Authentication
 Once the schema is set up:
 1. Try signing up with a **new email address** (not test@example.com)
 2. The signup should work and create a user profile
@@ -54,6 +62,12 @@ The schema creates:
 - Usually means the users table doesn't exist
 - Make sure you ran the complete schema.sql
 
+### "Image upload failed" or "Failed to upload image"
+- This means the storage policies aren't configured
+- Go to Storage → travel-images bucket → Policies tab
+- Create the 6 policies listed in `database/setup-storage-policies.sql`
+- Make sure the `travel-images` bucket exists in your Supabase Storage
+
 ## ✅ Success Indicators
 
 After setup, you should see:
@@ -69,6 +83,7 @@ Once set up, you can test with:
 - **Password**: `TestPass123!`
 
 Or create a new account with any email address.
+
 
 
 

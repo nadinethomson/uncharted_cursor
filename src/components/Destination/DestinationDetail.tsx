@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAppSelector } from '../../store/hooks';
 import { useAuth } from '../../hooks/useAuth';
 import { Destination } from '../../types';
 import { getDestinationById } from '../../services/destinationService';
@@ -29,13 +28,7 @@ const DestinationDetail: React.FC = () => {
   // Modal states
   const [showAddExperience, setShowAddExperience] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadDestinationData();
-    }
-  }, [id]);
-
-  const loadDestinationData = async () => {
+  const loadDestinationData = useCallback(async () => {
     if (!id) return;
     
     setLoading(true);
@@ -61,9 +54,17 @@ const DestinationDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, isLoggedIn, user]);
 
-  const handleSaveDestination = async () => {
+  useEffect(() => {
+    if (id) {
+      loadDestinationData();
+    }
+  }, [id, loadDestinationData]);
+
+  
+
+   const handleSaveDestination = async () => {
     if (!destination || !user) return;
 
     try {

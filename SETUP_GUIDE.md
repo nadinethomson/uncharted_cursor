@@ -47,7 +47,27 @@ Run the SQL schema from `database/schema.sql` in your Supabase SQL editor:
 2. Copy and paste the contents of `database/schema.sql`
 3. Click **Run** to create all tables
 
-### 5. Seed Data (Optional)
+### 5. Configure Storage for Images
+
+Set up the storage bucket policies for image uploads:
+
+1. Go to **Storage** in your Supabase dashboard
+2. Create the `travel-images` bucket if it doesn't exist
+3. Click on the bucket → **Policies** tab
+4. Create the following 6 policies (see `database/setup-storage-policies.sql` for exact definitions):
+   - **Policy 1**: Authenticated users can upload to their posts folder
+   - **Policy 2**: Authenticated users can upload to attractions folder  
+   - **Policy 3**: Public can view all images
+   - **Policy 4**: Users can update their own post images
+   - **Policy 5**: Users can delete their own post images
+   - **Policy 6**: Users can delete attraction images
+
+This enables:
+- ✅ **Image Uploads** - Users can upload images to posts and experiences
+- ✅ **Public Access** - Images are viewable by everyone
+- ✅ **Security** - Users can only modify their own images
+
+### 6. Seed Data (Optional)
 
 Run the seed script to add sample destinations:
 
@@ -55,7 +75,7 @@ Run the seed script to add sample destinations:
 node scripts/seedDestinations.js
 ```
 
-### 6. Restart the App
+### 7. Restart the App
 
 ```bash
 npm start

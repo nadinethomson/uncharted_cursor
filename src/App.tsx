@@ -15,6 +15,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Import components
@@ -73,6 +74,11 @@ function AppContent() {
                 <Layout>
                   <ProfilePage />
                 </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/payment-success" element={
+              <ProtectedRoute>
+                <PaymentSuccessPage />
               </ProtectedRoute>
             } />
         

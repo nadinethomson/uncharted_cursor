@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
 import { resetPassword } from '../../services/authService';
 import { ERROR_MESSAGES } from '../../utils/constants';
+import BuyCredits from './BuyCredits';
+import PurchaseHistory from './PurchaseHistory';
 
 interface AccountSettingsProps {
   user: any; // User type
@@ -42,6 +43,16 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ user }) => {
       </h2>
       
       <div className="space-y-6">
+        {/* Buy Credits Section */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <BuyCredits />
+        </div>
+
+        {/* Purchase History Section */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <PurchaseHistory userId={user.id} />
+        </div>
+
         {/* Password Reset Section */}
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
@@ -153,6 +164,7 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ user }) => {
 };
 
 export default AccountSettings;
+
 
 
 

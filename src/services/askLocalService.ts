@@ -32,31 +32,42 @@ export async function createAskLocalQuestion(userId: string, questionData: Creat
     }
 
     // Then create the question
-    const { data: question, error } = await supabase
+    const { data: newQuestion, error: insertError } = await supabase
       .from('ask_a_local')
       .insert({
         user_id: userId,
         destination_id: questionData.destinationId,
         question: questionData.question
       })
+      .select('*')
+      .single();
+
+    if (insertError) {
+      throw new Error(`Failed to create question: ${insertError.message}`);
+    }
+
+    // Fetch the complete question with related data
+    const { data: question, error: fetchError } = await supabase
+      .from('ask_a_local')
       .select(`
         *,
-        user:users!ask_a_local_user_id_fkey (
+        user:users!user_id (
           id,
           username,
           credits,
           reputation
         ),
-        destination:destinations!ask_a_local_destination_id_fkey (
+        destination:destinations!destination_id (
           id,
           name,
           country
         )
       `)
+      .eq('id', newQuestion.id)
       .single();
 
-    if (error) {
-      throw new Error(`Failed to create question: ${error.message}`);
+    if (fetchError) {
+      throw new Error(`Failed to fetch created question: ${fetchError.message}`);
     }
 
     return { question, creditResult: creditResult.creditResult };
@@ -78,7 +89,23 @@ export async function createAskLocalQuestion(userId: string, questionData: Creat
  */
 export async function answerAskLocalQuestion(questionId: string, answer: string, answeredBy: string): Promise<AskALocal> {
   try {
-    const { data: question, error } = await supabase
+    // First, check if the question exists and is in pending status
+    const { data: existingQuestion, error: checkError } = await supabase
+      .from('ask_a_local')
+      .select('id, status, user_id')
+      .eq('id', questionId)
+      .single();
+
+    if (checkError || !existingQuestion) {
+      throw new Error(`Question not found: ${checkError?.message || 'Question does not exist'}`);
+    }
+
+    if (existingQuestion.status !== 'pending') {
+      throw new Error(`Question is not in pending status: ${existingQuestion.status}`);
+    }
+
+    // Update the question
+    const { data: updatedQuestion, error: updateError } = await supabase
       .from('ask_a_local')
       .update({
         answer,
@@ -87,30 +114,41 @@ export async function answerAskLocalQuestion(questionId: string, answer: string,
         updated_at: new Date().toISOString()
       })
       .eq('id', questionId)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      throw new Error(`Failed to answer question: ${updateError.message}`);
+    }
+
+    // Fetch the complete question with related data
+    const { data: question, error: fetchError } = await supabase
+      .from('ask_a_local')
       .select(`
         *,
-        user:users!ask_a_local_user_id_fkey (
+        user:users!user_id (
           id,
           username,
           credits,
           reputation
         ),
-        destination:destinations!ask_a_local_destination_id_fkey (
+        destination:destinations!destination_id (
           id,
           name,
           country
         ),
-        answered_by_user:users!ask_a_local_answered_by_fkey (
+        answered_by_user:users!answered_by (
           id,
           username,
           credits,
           reputation
         )
       `)
+      .eq('id', questionId)
       .single();
 
-    if (error) {
-      throw new Error(`Failed to answer question: ${error.message}`);
+    if (fetchError) {
+      throw new Error(`Failed to fetch updated question: ${fetchError.message}`);
     }
 
     // Create notification for the question asker
@@ -146,18 +184,18 @@ export async function getAskALocalQuestions(destinationId: string): Promise<AskA
       .from('ask_a_local')
       .select(`
         *,
-        user:users!ask_a_local_user_id_fkey (
+        user:users!user_id (
           id,
           username,
           credits,
           reputation
         ),
-        destination:destinations!ask_a_local_destination_id_fkey (
+        destination:destinations!destination_id (
           id,
           name,
           country
         ),
-        answered_by_user:users!ask_a_local_answered_by_fkey (
+        answered_by_user:users!answered_by (
           id,
           username,
           credits,

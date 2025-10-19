@@ -68,7 +68,7 @@ export function useDestinations() {
 
   const updateFilter = useCallback((filters: Partial<typeof destinationsState.filters>) => {
     dispatch(updateFilters(filters));
-  }, [dispatch, destinationsState.filters]);
+  }, [dispatch]);
 
   const clearFilter = useCallback(() => {
     dispatch(clearFilters());

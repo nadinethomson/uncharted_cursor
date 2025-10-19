@@ -128,6 +128,7 @@ CREATE TABLE credit_transactions (
   amount INT NOT NULL,
   type VARCHAR(50) NOT NULL,
   related_id UUID,
+  purchase_id UUID REFERENCES credit_purchases(id) ON DELETE SET NULL,
   status VARCHAR(20) DEFAULT 'completed' CHECK (status IN ('pending','completed','failed','reversed')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -136,6 +137,25 @@ CREATE TABLE credit_transactions (
 CREATE INDEX idx_transactions_user ON credit_transactions(user_id);
 CREATE INDEX idx_transactions_status ON credit_transactions(status);
 CREATE INDEX idx_transactions_created_at ON credit_transactions(created_at DESC);
+
+-- Credit purchases table (for Stripe payment tracking)
+CREATE TABLE credit_purchases (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stripe_session_id VARCHAR(255) UNIQUE NOT NULL,
+  stripe_payment_intent_id VARCHAR(255),
+  amount_gbp DECIMAL(10, 2) NOT NULL,
+  credits_purchased INT NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending','completed','failed','refunded')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Indexes for credit_purchases table
+CREATE INDEX idx_purchases_user ON credit_purchases(user_id);
+CREATE INDEX idx_purchases_stripe_session ON credit_purchases(stripe_session_id);
+CREATE INDEX idx_purchases_status ON credit_purchases(status);
+CREATE INDEX idx_purchases_created_at ON credit_purchases(created_at DESC);
 
 -- Reports table (for content moderation)
 CREATE TABLE reports (
@@ -315,6 +335,10 @@ CREATE POLICY "Users can view own notifications" ON notifications
 CREATE POLICY "Users can view own transactions" ON credit_transactions
   FOR SELECT USING (auth.uid() = user_id);
 
+-- Credit purchases (read-only for users)
+CREATE POLICY "Users can view own purchases" ON credit_purchases
+  FOR SELECT USING (auth.uid() = user_id);
+
 -- Reports
 CREATE POLICY "Users can create reports" ON reports
   FOR INSERT WITH CHECK (auth.uid() = reported_by);
@@ -360,6 +384,79 @@ $$ LANGUAGE plpgsql;
 -- Create a scheduled job to run auto_close_old_questions daily
 -- (This would be set up in Supabase dashboard or via pg_cron)
 
+-- Function to process credit purchases atomically
+CREATE OR REPLACE FUNCTION process_credit_purchase(
+  purchase_id UUID,
+  user_id UUID,
+  credits_to_add INT,
+  payment_intent_id TEXT
+)
+RETURNS void AS $$
+BEGIN
+  -- Update the purchase record
+  UPDATE credit_purchases 
+  SET 
+    status = 'completed',
+    completed_at = NOW(),
+    stripe_payment_intent_id = payment_intent_id
+  WHERE id = purchase_id;
+
+  -- Add credits to user
+  UPDATE users 
+  SET 
+    credits = credits + credits_to_add,
+    reputation = reputation + credits_to_add,
+    updated_at = NOW()
+  WHERE id = user_id;
+
+  -- Create credit transaction record
+  INSERT INTO credit_transactions (
+    user_id,
+    amount,
+    type,
+    purchase_id,
+    status
+  ) VALUES (
+    user_id,
+    credits_to_add,
+    'purchase',
+    purchase_id,
+    'completed'
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to deduct credits (for refunds)
+CREATE OR REPLACE FUNCTION deduct_credits(
+  user_id UUID,
+  amount INT,
+  reason TEXT
+)
+RETURNS void AS $$
+BEGIN
+  -- Deduct credits from user (ensure they don't go negative)
+  UPDATE users 
+  SET 
+    credits = GREATEST(0, credits - amount),
+    reputation = GREATEST(0, reputation - amount),
+    updated_at = NOW()
+  WHERE id = user_id;
+
+  -- Create credit transaction record
+  INSERT INTO credit_transactions (
+    user_id,
+    amount,
+    type,
+    status
+  ) VALUES (
+    user_id,
+    -amount,
+    reason,
+    'completed'
+  );
+END;
+$$ LANGUAGE plpgsql;
+
 -- Insert some sample data for testing
 INSERT INTO destinations (name, country, trip_style_tags, interest_tags, overview, sustainability, best_season, budget_category, distance_km) VALUES
 ('Kyoto, Japan', 'JP', '["Cultural", "Relaxed"]', '["Culture", "Food", "History"]', 'Experience authentic Japanese culture in ancient temples and traditional gardens. Kyoto offers serene experiences away from Tokyo''s hustle.', 'Medium', 'Spring, Autumn', 'Medium', 8000),
@@ -377,6 +474,7 @@ BEGIN
   NULL;
 END;
 $$ LANGUAGE plpgsql;
+
 
 
 

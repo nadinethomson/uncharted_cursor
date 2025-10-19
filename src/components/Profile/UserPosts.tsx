@@ -196,7 +196,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ userId }) => {
                       <div className="mb-3">
                         <img
                           src={post.image_url}
-                          alt="Post image"
+                          alt="no image"
                           className="max-w-full h-48 object-cover rounded-lg"
                         />
                       </div>
@@ -233,6 +233,7 @@ const UserPosts: React.FC<UserPostsProps> = ({ userId }) => {
 };
 
 export default UserPosts;
+
 
 
 

@@ -239,6 +239,29 @@ Component → Hook → Service → Database
 - ❌ **Circular Dependencies**: Explicit boundaries prevent this
 - ❌ **Inconsistent Rollback**: Comprehensive error handling prevents this
 
+## 🔧 **Troubleshooting**
+
+### **Image Upload Issues**
+
+If you're unable to upload images to posts or reviews:
+
+1. **Check Storage Bucket**: Ensure the `travel-images` bucket exists in your Supabase Storage
+2. **Run Storage Policies**: Execute `database/setup-storage-policies.sql` in your Supabase SQL Editor
+3. **Verify Policies**: Check that storage policies are configured in your Supabase dashboard
+4. **Test Upload**: Try uploading a small image (< 2MB) to verify the setup
+
+**Common Error Messages:**
+- `"Failed to upload image"` → Storage policies not configured
+- `"403 Forbidden"` → Bucket doesn't exist or lacks permissions
+- `"File too large"` → Image exceeds 2MB limit
+
+**Solution Steps:**
+1. Go to Supabase Dashboard → Storage
+2. Create the `travel-images` bucket if it doesn't exist
+3. Click on the bucket → Policies tab
+4. Create the 6 policies listed in `database/setup-storage-policies.sql`
+5. Test image upload in the app
+
 ## 📈 **Performance Considerations**
 
 - **Lazy Loading**: Components loaded on demand
@@ -249,6 +272,7 @@ Component → Hook → Service → Database
 ---
 
 **This architecture ensures the app is maintainable, testable, and free from the race conditions and state inconsistencies that plagued the previous prototype.**
+
 
 
 

@@ -243,7 +243,7 @@ const PostCard: React.FC<PostCardProps> = ({
             <div className="mb-3">
               <img
                 src={post.image_url}
-                alt="Post image"
+                alt=""
                 className="max-w-full h-auto rounded-lg shadow-sm"
                 style={{ maxHeight: '300px' }}
               />
@@ -286,6 +286,7 @@ const PostCard: React.FC<PostCardProps> = ({
 };
 
 export default PostCard;
+
 
 
 

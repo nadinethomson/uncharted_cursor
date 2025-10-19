@@ -77,6 +77,28 @@ export interface SavedVisited {
   destination?: Destination;
 }
 
+export interface CreditPurchase {
+  id: string;
+  user_id: string;
+  stripe_session_id: string;
+  stripe_payment_intent_id: string | null;
+  amount_gbp: number;
+  credits_purchased: number;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface CreditPackage {
+  id: 'small' | 'medium' | 'large';
+  name: string;
+  credits: number;
+  price: number;
+  description: string;
+  bonus?: number;
+  popular?: boolean;
+}
+
 export interface Notification {
   id: string;
   user_id: string;
