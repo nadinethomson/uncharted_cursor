@@ -36,21 +36,19 @@ React.useEffect(() => {
 
   return (
     <section className="hero-section">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-           {/* Background Image with Overlay */}
-      <div className="absolute inset-0 h-[600px] sm:h-[700px]">
+              {/* Background Image with Overlay */}
+<div className="relative h-[600px] sm:h-[700px] flex items-center justify-center">
         {imageLoading ? (
           <div className="w-full h-full bg-gradient-forest animate-pulse" />
         ) : (
           <>
-            <img src={unsplashImage || heroImage} alt="Adventure travel" className="w-full h-full object-cover" />
+            <img src={unsplashImage || heroImage} alt="Adventure travel" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-forest opacity-40" />
           </>
         )}
-      </div>
+     
           {/* Hero Content */}
-          <div className="max-w-4xl mx-auto">
+          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="heading-hero mb-6">
               Explore the Unseen
             </h1>
@@ -101,19 +99,21 @@ React.useEffect(() => {
                 <span>Authentic Experiences</span>
               </div>
             </div>
-            
-            {/* No Account Needed Message */}
-            {!isLoggedIn && (
-              <div className="mt-8 p-4 bg-sandstone-light border border-sandstone-dark rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium text-deep-forest">No account needed</span> to browse destinations and take the quiz. 
-                  <span className="font-medium text-deep-forest"> Sign up</span> to ask locals, share tips, and earn credits.
-                </p>
-              </div>
-            )}
+            </div>
+ 
           </div>
-          
-          {/* Hero Image/Visual */}
+        </div>
+      {/* No Account Needed Message */}
+     {!isLoggedIn && (
+      <div className="mt-8 p-4 bg-sandstone-light border border-sandstone-dark rounded-lg">
+       <p className="text-sm text-gray-600">
+       <span className="font-medium text-deep-forest">No account needed</span> to browse destinations and take the quiz. 
+       <span className="font-medium text-deep-forest"> Sign up</span> to ask locals, share tips, and earn credits.
+     </p>
+     </div>
+    )}
+        
+    {/* Hero Image/Visual */}
           <div className="mt-16 relative">
             <div className="bg-gradient-to-r from-ocean-sky to-warm-amber rounded-2xl p-8 text-white text-center">
               <div className="text-6xl mb-4">🗺️</div>
@@ -123,9 +123,8 @@ React.useEffect(() => {
               </p>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
+       
+     </section>
   );
 };
 
